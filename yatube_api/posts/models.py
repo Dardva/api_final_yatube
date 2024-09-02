@@ -1,5 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.db.models import Q, F
+
+from .constants import TEXT_LENGTH
 
 User = get_user_model()
 
@@ -10,7 +13,7 @@ class Group(models.Model):
     description = models.TextField()
 
     def __str__(self):
-        return self.title
+        return self.title[TEXT_LENGTH]
 
 
 class Post(models.Model):
@@ -25,8 +28,11 @@ class Post(models.Model):
     image = models.ImageField(
         upload_to='posts/', null=True, blank=True)
 
+    class Meta:
+        ordering = ['id']
+
     def __str__(self):
-        return self.text
+        return self.text[TEXT_LENGTH]
 
 
 class Comment(models.Model):
@@ -38,6 +44,9 @@ class Comment(models.Model):
     created = models.DateTimeField(
         'Дата добавления', auto_now_add=True, db_index=True)
 
+    def __str__(self):
+        return self.text[TEXT_LENGTH]
+
 
 class Follow(models.Model):
     user = models.ForeignKey(
@@ -45,5 +54,11 @@ class Follow(models.Model):
     following = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='followers')
 
-    def __str__(self):
-        return self.title
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=~Q(user=F('following')),
+                name='no_self_follow'
+            ),
+        ]
+        unique_together = (('user', 'following'),)
