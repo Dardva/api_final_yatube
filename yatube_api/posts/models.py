@@ -60,5 +60,6 @@ class Follow(models.Model):
                 check=~Q(user=F('following')),
                 name='no_self_follow'
             ),
+            models.UniqueConstraint(
+                fields=['user', 'following'], name='unique_following_user')
         ]
-        unique_together = (('user', 'following'),)
